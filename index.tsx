@@ -69,12 +69,6 @@ const INITIAL_USERS: User[] = [
     "role": "admin"
   },
   {
-    "id": "073971de-e83f-4e18-b3e6-cd937864955c",
-    "username": "josue",
-    "password": "josue123",
-    "role": "user"
-  },
-  {
     "id": "95e904f6-50a1-4a04-8b3d-3b18e7fdb3e8",
     "username": "hoy",
     "password": "hoy12",
