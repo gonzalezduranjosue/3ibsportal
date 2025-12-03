@@ -301,7 +301,7 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
           <div style={{ background: 'var(--primary-light)', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--primary)' }}>
             <Icons.Wifi />
           </div>
-          <h1 style={{ fontSize: '1.85rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.025em', color: 'var(--text-main)' }}>Portal Cautivo</h1>
+          <h1 style={{ fontSize: '1.85rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.025em', color: 'var(--text-main)' }}>3IBS</h1>
           <p style={{ color: 'var(--text-muted)' }}>Inicia sesión para acceder a la red</p>
         </div>
 
@@ -334,7 +334,7 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
           </button>
         </form>
         <div style={{ marginTop: '2.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', opacity: 0.7 }}>
-          Acceso seguro a Red Local v1.0
+          Acceso seguro a Red Local - 3IBS
         </div>
       </div>
     </div>
