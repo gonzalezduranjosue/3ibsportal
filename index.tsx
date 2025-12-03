@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // --- Types ---
@@ -38,6 +38,12 @@ const Icons = {
   ),
   CheckCircle: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  ),
+  Download: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  ),
+  Upload: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
   )
 };
 
@@ -105,7 +111,9 @@ const Styles = () => (
     .btn-danger { background: #fee2e2; color: var(--danger); }
     .btn-danger:hover { background: #fecaca; }
     .btn-ghost { background: transparent; color: var(--text-muted); }
-    .btn-ghost:hover { background: #f1f5f9; color: var(--text-main); }
+    .btn-ghost:hover { background: #f1f5f9; color: var(--text-main); border: 1px solid transparent; }
+    .btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border); }
+    .btn-outline:hover { background: #f8fafc; border-color: var(--text-muted); }
     .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 8px; }
 
     .input-group { margin-bottom: 1.25rem; }
@@ -133,6 +141,9 @@ const Styles = () => (
 
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; background: var(--surface); padding: 1rem 2rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); border: 1px solid var(--border); }
     .logo { display: flex; align-items: center; gap: 0.75rem; font-weight: 800; font-size: 1.25rem; color: var(--primary); letter-spacing: -0.025em; }
+    
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .tool-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 1rem; }
   `}</style>
 );
 
@@ -300,6 +311,7 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
   const [users, setUsers] = useState<User[]>(getStoredUsers());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     saveStoredUsers(users);
@@ -326,14 +338,52 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
     }
   };
 
-  const openCreateModal = () => {
-    setEditingUser(undefined);
-    setIsModalOpen(true);
+  // --- Sync Logic ---
+  const handleExport = () => {
+    const dataStr = JSON.stringify(users, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cp_usuarios_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
-  const openEditModal = (u: User) => {
-    setEditingUser(u);
-    setIsModalOpen(true);
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].username) {
+           // Ensure current admin isn't lost if not in file, though usually we want full replace
+           // Let's do a safe merge: replace all but ensure current user session stays valid if possible.
+           // Ideally, full replace is safer for "Sync".
+           if (confirm(`Se cargarán ${parsed.length} usuarios. Esto reemplazará la lista actual. ¿Continuar?`)) {
+             setUsers(parsed);
+             alert('¡Base de datos sincronizada correctamente!');
+           }
+        } else {
+          alert('El archivo no tiene el formato de base de datos correcto.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error al leer el archivo. Asegúrate de que es un JSON válido.');
+      }
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -353,63 +403,94 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
         </div>
       </div>
 
-      <div className="card fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem' }}>Gestión de Usuarios</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Administra el acceso a la red local.</p>
+      <div className="fade-in">
+        {/* Sync Tools Section */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-main)' }}>Sincronización Manual</h3>
+          <div className="tools-grid">
+            <div className="tool-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)', fontWeight: '600' }}>
+                <Icons.Download /> Exportar Datos
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descarga la lista actual de usuarios. Envía este archivo a otros dispositivos para sincronizar.</p>
+              <button onClick={handleExport} className="btn btn-outline btn-sm">Descargar Base de Datos</button>
+            </div>
+            
+            <div className="tool-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)', fontWeight: '600' }}>
+                <Icons.Upload /> Importar Datos
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Carga un archivo de base de datos para actualizar la lista de usuarios en este dispositivo.</p>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept=".json" 
+                onChange={handleImportFile}
+              />
+              <button onClick={handleImportClick} className="btn btn-outline btn-sm">Cargar Base de Datos</button>
+            </div>
           </div>
-          <button onClick={openCreateModal} className="btn btn-primary btn-sm">
-            <Icons.Plus /> Nuevo Usuario
-          </button>
         </div>
 
-        <div className="table-container">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Usuario</th>
-                <th>Rol</th>
-                <th>Contraseña</th>
-                <th style={{ textAlign: 'right' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
-                        <Icons.User />
-                      </div>
-                      <span style={{ fontWeight: '600' }}>{user.username}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
-                      {user.role === 'admin' ? 'Administrador' : 'Usuario'}
-                    </span>
-                  </td>
-                  <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{user.password}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                      <button onClick={() => openEditModal(user)} className="btn btn-ghost btn-sm" title="Editar">
-                        <Icons.Edit />
-                      </button>
-                      {user.username !== 'joshy' && user.id !== currentUser.id && (
-                        <button onClick={() => handleDelete(user.id)} className="btn btn-danger btn-sm" title="Eliminar">
-                          <Icons.Trash />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem' }}>Gestión de Usuarios</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Administra el acceso a la red local.</p>
+            </div>
+            <button onClick={() => { setEditingUser(undefined); setIsModalOpen(true); }} className="btn btn-primary btn-sm">
+              <Icons.Plus /> Nuevo Usuario
+            </button>
+          </div>
+
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Contraseña</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {users.length === 0 && (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios registrados</div>
-          )}
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                          <Icons.User />
+                        </div>
+                        <span style={{ fontWeight: '600' }}>{user.username}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
+                        {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{user.password}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="btn btn-ghost btn-sm" title="Editar">
+                          <Icons.Edit />
+                        </button>
+                        {user.username !== 'joshy' && user.id !== currentUser.id && (
+                          <button onClick={() => handleDelete(user.id)} className="btn btn-danger btn-sm" title="Eliminar">
+                            <Icons.Trash />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {users.length === 0 && (
+              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios registrados</div>
+            )}
+          </div>
         </div>
       </div>
 
