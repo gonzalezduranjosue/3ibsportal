@@ -10,6 +10,8 @@ interface User {
   username: string;
   password: string; // In a real app, this would be hashed!
   role: Role;
+  isLogged?: boolean; // New: Session Lock
+  lastSeen?: number;  // New: Heartbeat timestamp
 }
 
 interface Session {
@@ -51,6 +53,9 @@ const Icons = {
   ),
   Copy: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  ),
+  Power: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
   )
 };
 
@@ -86,6 +91,8 @@ const saveStoredUsers = (users: User[]) => {
   localStorage.setItem('cp_users', JSON.stringify(users));
 };
 
+const SESSION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes inactivity timeout
+
 // --- Styles ---
 const Styles = () => (
   <style>{`
@@ -106,6 +113,7 @@ const Styles = () => (
       
       --danger: #d04d4d;
       --success: #558b5e;
+      --warning: #d97706;
       
       --shadow-sm: 0 2px 4px rgba(74, 59, 50, 0.05);
       --shadow-md: 0 8px 16px rgba(74, 59, 50, 0.08);
@@ -242,9 +250,13 @@ const Styles = () => (
     .table tr:hover td { background: #faf8f5; transition: background 0.2s; }
     
     /* Badges */
-    .badge { padding: 0.4rem 0.85rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; }
+    .badge { padding: 0.4rem 0.85rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; display: inline-flex; align-items: center; gap: 6px; }
     .badge-admin { background: #e0d0c1; color: #6d4c2d; }
     .badge-user { background: #f0ebe4; color: #8d7f71; }
+    
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-online { background-color: var(--success); box-shadow: 0 0 0 2px rgba(85, 139, 94, 0.2); }
+    .status-offline { background-color: var(--text-muted); opacity: 0.3; }
 
     /* Modal */
     .modal-overlay { 
@@ -312,9 +324,25 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
     e.preventDefault();
     const users = getStoredUsers();
     // Case insensitive username check
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+    const userIndex = users.findIndex(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     
-    if (user) {
+    if (userIndex !== -1) {
+      const user = users[userIndex];
+      const now = Date.now();
+      
+      // Check Single Session Constraint
+      // If isLogged is true AND lastSeen is recent (< 2 mins), block logic
+      if (user.role !== 'admin' && user.isLogged && user.lastSeen && (now - user.lastSeen < SESSION_TIMEOUT_MS)) {
+        setError('Este usuario ya tiene una sesión activa en otro dispositivo.');
+        return;
+      }
+
+      // Update User State to Active
+      user.isLogged = true;
+      user.lastSeen = now;
+      users[userIndex] = user;
+      saveStoredUsers(users);
+
       onLogin(user);
     } else {
       setError('Credenciales inválidas. Por favor intenta de nuevo.');
@@ -371,10 +399,26 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
 const UserWelcome = ({ user, onLogout }: { user: User, onLogout: () => void }) => {
   const [timer, setTimer] = useState(0);
 
+  // Timer for display
   useEffect(() => {
     const interval = setInterval(() => setTimer(t => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Heartbeat to keep session alive in DB
+  useEffect(() => {
+    const heartbeat = setInterval(() => {
+      const users = getStoredUsers();
+      const idx = users.findIndex(u => u.id === user.id);
+      if (idx !== -1) {
+        users[idx].lastSeen = Date.now();
+        users[idx].isLogged = true;
+        saveStoredUsers(users);
+      }
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(heartbeat);
+  }, [user.id]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -422,7 +466,9 @@ const UserModal = ({ user, onClose, onSave }: UserModalProps) => {
       id: user?.id || generateId(),
       username,
       password,
-      role
+      role,
+      isLogged: user?.isLogged,
+      lastSeen: user?.lastSeen
     });
   };
 
@@ -469,29 +515,60 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [generatedCode, setGeneratedCode] = useState('');
 
+  // Refresh user list periodically to check online status
   useEffect(() => {
-    saveStoredUsers(users);
-  }, [users]);
+    const interval = setInterval(() => {
+      setUsers(getStoredUsers());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Only save when structural changes happen (not just refreshing reading)
+    // Actually, saving here might overwrite heartbeat from other tabs if not careful.
+    // For this simple app, we assume Admin is the "writer" of user structure.
+    // To be safe, we won't auto-save just on state change unless it was an explicit action.
+  }, []);
+
+  const persistUsers = (newUsers: User[]) => {
+    setUsers(newUsers);
+    saveStoredUsers(newUsers);
+  };
 
   const handleCreate = (u: User) => {
     if (users.some(existing => existing.username === u.username)) {
       alert('El nombre de usuario ya existe');
       return;
     }
-    setUsers([...users, u]);
+    persistUsers([...users, u]);
     setIsModalOpen(false);
   };
 
   const handleEdit = (u: User) => {
-    setUsers(users.map(existing => existing.id === u.id ? u : existing));
+    persistUsers(users.map(existing => existing.id === u.id ? u : existing));
     setIsModalOpen(false);
     setEditingUser(undefined);
   };
 
   const handleDelete = (id: string) => {
     if (confirm('¿Estás seguro de eliminar este usuario?')) {
-      setUsers(users.filter(u => u.id !== id));
+      persistUsers(users.filter(u => u.id !== id));
     }
+  };
+
+  const handleForceLogout = (id: string) => {
+    if(confirm('¿Desconectar forzosamente a este usuario? Podrá volver a iniciar sesión inmediatamente.')) {
+      persistUsers(users.map(u => {
+        if (u.id === id) {
+          return { ...u, isLogged: false, lastSeen: 0 };
+        }
+        return u;
+      }));
+    }
+  };
+
+  const isOnline = (u: User) => {
+    return u.isLogged && u.lastSeen && (Date.now() - u.lastSeen < SESSION_TIMEOUT_MS);
   };
 
   // --- Sync Logic ---
@@ -523,7 +600,7 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].username) {
            if (confirm(`Se cargarán ${parsed.length} usuarios. Esto reemplazará la lista actual. ¿Continuar?`)) {
-             setUsers(parsed);
+             persistUsers(parsed);
              alert('¡Base de datos sincronizada correctamente!');
            }
         } else {
@@ -540,13 +617,21 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
 
   // Generate Code String for Index.tsx
   const handleGenerateCode = () => {
-    const code = `const INITIAL_USERS: User[] = ${JSON.stringify(users, null, 2)};`;
+    // We clean session data before exporting code
+    const cleanUsers = users.map(u => ({
+      id: u.id,
+      username: u.username,
+      password: u.password,
+      role: u.role
+      // Exclude isLogged and lastSeen
+    }));
+    const code = `const INITIAL_USERS: User[] = ${JSON.stringify(cleanUsers, null, 2)};`;
     setGeneratedCode(code);
   };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(generatedCode);
-    alert('Código copiado al portapapeles. Ahora pégalo en index.tsx reemplazando la constante INITIAL_USERS.');
+    alert('Código copiado. Pégalo en index.tsx para actualizar los usuarios globales.');
   };
 
   return (
@@ -599,7 +684,7 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
                 <Icons.Code /> Persistencia en Código (Global)
               </div>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                Para que los usuarios funcionen en <b>TODOS</b> los dispositivos sin importar archivos JSON, genera el código aquí y actualiza el archivo <code>index.tsx</code> en GitHub.
+                Para que los usuarios funcionen en <b>TODOS</b> los dispositivos, genera el código aquí y actualiza el archivo <code>index.tsx</code>.
               </p>
               {!generatedCode ? (
                 <button onClick={handleGenerateCode} className="btn btn-primary btn-sm">Generar Código de Usuarios</button>
@@ -633,41 +718,58 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
                 <tr>
                   <th>Usuario</th>
                   <th>Rol</th>
+                  <th>Estado</th>
                   <th>Contraseña</th>
                   <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map(user => (
-                  <tr key={user.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{ background: '#faf8f5', padding: '0.6rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
-                          <Icons.User />
+                {users.map(user => {
+                  const online = isOnline(user);
+                  return (
+                    <tr key={user.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ background: '#faf8f5', padding: '0.6rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                            <Icons.User />
+                          </div>
+                          <span style={{ fontWeight: '700', fontSize: '1rem' }}>{user.username}</span>
                         </div>
-                        <span style={{ fontWeight: '700', fontSize: '1rem' }}>{user.username}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
-                        {user.role === 'admin' ? 'Administrador' : 'Usuario'}
-                      </span>
-                    </td>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '1rem' }}>{user.password}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                        <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="btn btn-ghost btn-sm" title="Editar">
-                          <Icons.Edit />
-                        </button>
-                        {user.username !== 'joshy' && user.id !== currentUser.id && (
-                          <button onClick={() => handleDelete(user.id)} className="btn btn-danger btn-sm" title="Eliminar">
-                            <Icons.Trash />
+                      </td>
+                      <td>
+                        <span className={`badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
+                          {user.role === 'admin' ? 'Administrador' : 'Usuario'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                          <div className={`status-dot ${online ? 'status-online' : 'status-offline'}`}></div>
+                          <span style={{fontSize: '0.85rem', color: online ? 'var(--success)' : 'var(--text-muted)', fontWeight: 600}}>
+                            {online ? 'En línea' : 'Desconectado'}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '1rem' }}>{user.password}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                          {online && (
+                             <button onClick={() => handleForceLogout(user.id)} className="btn btn-outline btn-sm" title="Forzar Desconexión" style={{color: 'var(--warning)', borderColor: 'var(--warning)'}}>
+                               <Icons.Power />
+                             </button>
+                          )}
+                          <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="btn btn-ghost btn-sm" title="Editar">
+                            <Icons.Edit />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {user.username !== 'joshy' && user.id !== currentUser.id && (
+                            <button onClick={() => handleDelete(user.id)} className="btn btn-danger btn-sm" title="Eliminar">
+                              <Icons.Trash />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {users.length === 0 && (
@@ -707,7 +809,6 @@ const App = () => {
     }
 
     // Merge strategy: Add INITIAL_USERS if they don't exist in local storage
-    // This allows updates from GitHub (hardcoded) to propagate to devices
     let hasChanges = false;
     INITIAL_USERS.forEach(hardcodedUser => {
       const exists = currentUsers.find(u => u.username === hardcodedUser.username);
@@ -735,6 +836,16 @@ const App = () => {
   };
 
   const handleLogout = () => {
+    if (session) {
+      // Clear flag in DB
+      const users = getStoredUsers();
+      const idx = users.findIndex(u => u.id === session.user.id);
+      if (idx !== -1) {
+        users[idx].isLogged = false;
+        users[idx].lastSeen = 0;
+        saveStoredUsers(users);
+      }
+    }
     setSession(null);
     localStorage.removeItem('cp_session');
   };
