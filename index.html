@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Cautivo - Red Local</title>
   
-  <!-- Import Map configured for public CDNs to support GitHub Pages and local dev -->
+  <!-- Import Map: Explicitly pinning versions to prevent conflicts -->
   <script type="importmap">
 {
   "imports": {
@@ -18,13 +18,13 @@
 }
 </script>
   
-  <!-- Babel Standalone to compile TSX in browser (Required for running .tsx files statically) -->
+  <!-- Babel Standalone for in-browser compilation -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
   <div id="root"></div>
   
-  <!-- Load the TSX file with Babel processing -->
+  <!-- Main Application Script -->
   <script type="text/babel" data-type="module" data-presets="typescript,react" src="./index.tsx"></script>
 </body>
 </html>
