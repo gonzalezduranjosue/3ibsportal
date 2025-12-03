@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -44,16 +45,25 @@ const Icons = {
   ),
   Upload: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+  ),
+  Code: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  ),
+  Copy: () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
   )
 };
 
 // --- Initial Data ---
-const INITIAL_ADMIN: User = {
-  id: 'root-admin',
-  username: 'joshy',
-  password: 'dani5161',
-  role: 'admin',
-};
+// PASTE GENERATED CODE HERE TO UPDATE USERS GLOBALLY
+const INITIAL_USERS: User[] = [
+  {
+    "id": "root-admin",
+    "username": "joshy",
+    "password": "dani5161",
+    "role": "admin"
+  }
+];
 
 // --- Helper Functions ---
 const generateId = () => {
@@ -63,11 +73,13 @@ const generateId = () => {
 const getStoredUsers = (): User[] => {
   try {
     const stored = localStorage.getItem('cp_users');
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      return JSON.parse(stored);
+    }
   } catch (e) {
     console.error("Error loading users", e);
   }
-  return [INITIAL_ADMIN];
+  return INITIAL_USERS;
 };
 
 const saveStoredUsers = (users: User[]) => {
@@ -272,6 +284,20 @@ const Styles = () => (
       transition: all 0.3s ease;
     }
     .tool-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+    
+    textarea.code-area {
+      width: 100%;
+      height: 100px;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f0ebe4;
+      font-family: monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      color: var(--text-main);
+    }
+    textarea.code-area:focus { outline: none; border-color: var(--primary); background: white; }
   `}</style>
 );
 
@@ -285,7 +311,8 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const users = getStoredUsers();
-    const user = users.find(u => u.username === username && u.password === password);
+    // Case insensitive username check
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
     
     if (user) {
       onLogin(user);
@@ -440,6 +467,7 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [generatedCode, setGeneratedCode] = useState('');
 
   useEffect(() => {
     saveStoredUsers(users);
@@ -510,6 +538,17 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
     reader.readAsText(file);
   };
 
+  // Generate Code String for Index.tsx
+  const handleGenerateCode = () => {
+    const code = `const INITIAL_USERS: User[] = ${JSON.stringify(users, null, 2)};`;
+    setGeneratedCode(code);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(generatedCode);
+    alert('Código copiado al portapapeles. Ahora pégalo en index.tsx reemplazando la constante INITIAL_USERS.');
+  };
+
   return (
     <div className="container">
       <div className="header fade-in">
@@ -530,21 +569,21 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
       <div className="fade-in">
         {/* Sync Tools Section */}
         <div style={{ marginBottom: '2.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.25rem', color: 'var(--text-main)' }}>Sincronización Manual</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.25rem', color: 'var(--text-main)' }}>Herramientas de Base de Datos</h3>
           <div className="tools-grid">
             <div className="tool-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)', fontWeight: '700' }}>
-                <Icons.Download /> Exportar Datos
+                <Icons.Download /> Exportar JSON
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Descarga la lista actual de usuarios. Envía este archivo a otros dispositivos para sincronizar.</p>
-              <button onClick={handleExport} className="btn btn-outline btn-sm">Descargar Base de Datos</button>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Descarga archivo para enviar a otro dispositivo.</p>
+              <button onClick={handleExport} className="btn btn-outline btn-sm">Descargar</button>
             </div>
             
             <div className="tool-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>
-                <Icons.Upload /> Importar Datos
+                <Icons.Upload /> Importar JSON
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Carga un archivo de base de datos para actualizar la lista de usuarios en este dispositivo.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Carga archivo JSON desde otro dispositivo.</p>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -552,7 +591,27 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
                 accept=".json" 
                 onChange={handleImportFile}
               />
-              <button onClick={handleImportClick} className="btn btn-outline btn-sm">Cargar Base de Datos</button>
+              <button onClick={handleImportClick} className="btn btn-outline btn-sm">Importar</button>
+            </div>
+
+            <div className="tool-card" style={{gridColumn: 'span 2'}}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4a3b32', fontWeight: '700' }}>
+                <Icons.Code /> Persistencia en Código (Global)
+              </div>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                Para que los usuarios funcionen en <b>TODOS</b> los dispositivos sin importar archivos JSON, genera el código aquí y actualiza el archivo <code>index.tsx</code> en GitHub.
+              </p>
+              {!generatedCode ? (
+                <button onClick={handleGenerateCode} className="btn btn-primary btn-sm">Generar Código de Usuarios</button>
+              ) : (
+                <div style={{width: '100%'}}>
+                  <textarea readOnly className="code-area" value={generatedCode} onClick={(e) => e.currentTarget.select()} />
+                  <div style={{marginTop: '0.5rem', display: 'flex', gap: '0.5rem'}}>
+                    <button onClick={handleCopyCode} className="btn btn-primary btn-sm"><Icons.Copy /> Copiar Código</button>
+                    <button onClick={() => setGeneratedCode('')} className="btn btn-ghost btn-sm">Cerrar</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -634,11 +693,32 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
 
-  // Initialize DB on mount
+  // Initialize DB on mount and merge hardcoded users
   useEffect(() => {
-    const existing = localStorage.getItem('cp_users');
-    if (!existing) {
-      saveStoredUsers([INITIAL_ADMIN]);
+    const existingStr = localStorage.getItem('cp_users');
+    let currentUsers: User[] = [];
+
+    if (existingStr) {
+      try {
+        currentUsers = JSON.parse(existingStr);
+      } catch (e) {
+        currentUsers = [];
+      }
+    }
+
+    // Merge strategy: Add INITIAL_USERS if they don't exist in local storage
+    // This allows updates from GitHub (hardcoded) to propagate to devices
+    let hasChanges = false;
+    INITIAL_USERS.forEach(hardcodedUser => {
+      const exists = currentUsers.find(u => u.username === hardcodedUser.username);
+      if (!exists) {
+        currentUsers.push(hardcodedUser);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges || !existingStr) {
+      saveStoredUsers(currentUsers);
     }
     
     // Check for active session
