@@ -37,7 +37,7 @@ const Icons = {
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
   ),
   CheckCircle: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
   ),
   Download: () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -78,72 +78,200 @@ const saveStoredUsers = (users: User[]) => {
 const Styles = () => (
   <style>{`
     :root {
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --bg: #f1f5f9;
+      /* Bronze/Earth Tone Palette */
+      --primary: #9d7041; 
+      --primary-gradient: linear-gradient(135deg, #b08050 0%, #8a5e30 100%);
+      --primary-hover: #7d5329;
+      --primary-light: #f4eadd;
+      
+      --bg: #f5f2eb; /* Warm beige background */
       --surface: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --danger: #ef4444;
-      --success: #22c55e;
+      
+      --text-main: #4a3b32; /* Dark coffee */
+      --text-muted: #8d7f71; /* Taupe */
+      
+      --border: #e6dfd5;
+      
+      --danger: #d04d4d;
+      --success: #558b5e;
+      
+      --shadow-sm: 0 2px 4px rgba(74, 59, 50, 0.05);
+      --shadow-md: 0 8px 16px rgba(74, 59, 50, 0.08);
+      --shadow-lg: 0 16px 32px rgba(74, 59, 50, 0.12);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+    }
+    
     body { 
       background-color: var(--bg); 
       color: var(--text-main); 
       min-height: 100vh; 
       display: flex; 
       flex-direction: column;
-      background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-      background-size: 20px 20px;
+      background-image: radial-gradient(#d6ccc2 1px, transparent 1px);
+      background-size: 24px 24px;
     }
     
     .container { max-width: 1200px; margin: 0 auto; padding: 2rem; width: 100%; }
-    .card { background: var(--surface); border-radius: 16px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); padding: 2.5rem; border: 1px solid var(--border); }
     
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-      padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; font-size: 0.95rem;
+    .card { 
+      background: var(--surface); 
+      border-radius: 20px; 
+      box-shadow: var(--shadow-md); 
+      padding: 2.5rem; 
+      border: 1px solid var(--border);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.6); }
-    .btn-danger { background: #fee2e2; color: var(--danger); }
-    .btn-danger:hover { background: #fecaca; }
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+    }
+    
+    /* Buttons */
+    .btn {
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 0.5rem;
+      padding: 0.85rem 1.75rem; 
+      border-radius: 12px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      border: none; 
+      font-size: 0.95rem;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn:active { transform: scale(0.96); }
+    
+    .btn-primary { 
+      background: var(--primary-gradient); 
+      color: white; 
+      box-shadow: 0 4px 12px rgba(157, 112, 65, 0.3);
+    }
+    .btn-primary:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 8px 16px rgba(157, 112, 65, 0.4); 
+    }
+    
+    .btn-danger { background: #ffebeb; color: var(--danger); }
+    .btn-danger:hover { background: #fee2e2; transform: translateY(-1px); }
+    
     .btn-ghost { background: transparent; color: var(--text-muted); }
-    .btn-ghost:hover { background: #f1f5f9; color: var(--text-main); border: 1px solid transparent; }
+    .btn-ghost:hover { background: #f0ebe4; color: var(--text-main); transform: translateY(-1px); }
+    
     .btn-outline { background: white; color: var(--text-main); border: 1px solid var(--border); }
-    .btn-outline:hover { background: #f8fafc; border-color: var(--text-muted); }
-    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 8px; }
-
-    .input-group { margin-bottom: 1.25rem; }
-    .input-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
-    .input { width: 100%; padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border); font-size: 1rem; transition: all 0.2s; background: #f8fafc; }
-    .input:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .btn-outline:hover { background: #fcfbf9; border-color: var(--primary); transform: translateY(-1px); }
     
-    .table-container { overflow-x: auto; margin-top: 1.5rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 10px; }
+
+    /* Inputs */
+    .input-group { margin-bottom: 1.5rem; }
+    .input-group label { 
+      display: block; 
+      margin-bottom: 0.6rem; 
+      font-size: 0.9rem; 
+      font-weight: 600; 
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .input { 
+      width: 100%; 
+      padding: 1rem 1.25rem; 
+      border-radius: 12px; 
+      border: 2px solid transparent; 
+      background: #f0ebe4; 
+      font-size: 1rem; 
+      transition: all 0.3s ease; 
+      color: var(--text-main);
+    }
+    .input:hover {
+      background: #e8e1d9;
+    }
+    .input:focus { 
+      outline: none; 
+      background: white; 
+      border-color: var(--primary); 
+      box-shadow: 0 4px 12px rgba(157, 112, 65, 0.15);
+      transform: translateY(-2px);
+    }
+    .input-group:focus-within label {
+      color: var(--primary);
+    }
+    
+    /* Table */
+    .table-container { 
+      overflow-x: auto; 
+      margin-top: 1.5rem; 
+      border-radius: 16px; 
+      border: 1px solid var(--border); 
+      background: var(--surface); 
+      box-shadow: var(--shadow-sm);
+    }
     .table { width: 100%; border-collapse: collapse; text-align: left; }
-    .table th { padding: 1rem 1.5rem; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; background: #f8fafc; }
-    .table td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .table th { 
+      padding: 1.25rem 1.5rem; 
+      font-weight: 600; 
+      color: var(--text-muted); 
+      border-bottom: 1px solid var(--border); 
+      font-size: 0.85rem; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em; 
+      background: #faf8f5; 
+    }
+    .table td { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
     .table tr:last-child td { border-bottom: none; }
-    .table tr:hover td { background: #f8fafc; }
+    .table tr:hover td { background: #faf8f5; transition: background 0.2s; }
     
-    .badge { padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; }
-    .badge-admin { background: #dbeafe; color: #1e40af; }
-    .badge-user { background: #f1f5f9; color: #475569; }
+    /* Badges */
+    .badge { padding: 0.4rem 0.85rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; }
+    .badge-admin { background: #e0d0c1; color: #6d4c2d; }
+    .badge-user { background: #f0ebe4; color: #8d7f71; }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); display: flex; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(4px); }
-    .modal { background: var(--surface); width: 100%; max-width: 450px; border-radius: 16px; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); margin: 1rem; animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    /* Modal */
+    .modal-overlay { 
+      position: fixed; inset: 0; background: rgba(74, 59, 50, 0.3); 
+      display: flex; align-items: center; justify-content: center; 
+      z-index: 50; backdrop-filter: blur(6px); 
+      animation: fadeIn 0.3s ease;
+    }
+    .modal { 
+      background: var(--surface); 
+      width: 100%; max-width: 480px; 
+      border-radius: 24px; padding: 3rem; 
+      box-shadow: 0 25px 50px -12px rgba(74, 59, 50, 0.25); 
+      margin: 1rem; 
+      animation: modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+    }
     
-    @keyframes modalSlide { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    .fade-in { animation: fadeIn 0.4s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes modalSlide { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; background: var(--surface); padding: 1rem 2rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); border: 1px solid var(--border); }
-    .logo { display: flex; align-items: center; gap: 0.75rem; font-weight: 800; font-size: 1.25rem; color: var(--primary); letter-spacing: -0.025em; }
+    /* Layout specific */
+    .header { 
+      display: flex; align-items: center; justify-content: space-between; 
+      margin-bottom: 2.5rem; background: var(--surface); padding: 1.25rem 2rem; 
+      border-radius: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); 
+    }
+    .logo { 
+      display: flex; align-items: center; gap: 0.85rem; 
+      font-weight: 800; font-size: 1.35rem; color: var(--primary); letter-spacing: -0.02em; 
+    }
     
-    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-    .tool-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 1rem; }
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+    .tool-card { 
+      background: white; padding: 1.75rem; border-radius: 16px; 
+      border: 1px solid var(--border); display: flex; flex-direction: column; gap: 1.25rem; 
+      transition: all 0.3s ease;
+    }
+    .tool-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--primary); }
   `}</style>
 );
 
@@ -168,17 +296,17 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
 
   return (
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <div className="card fade-in" style={{ width: '100%', maxWidth: '400px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
-          <div style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--primary)' }}>
+      <div className="card fade-in" style={{ width: '100%', maxWidth: '420px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ background: 'var(--primary-light)', padding: '1.25rem', borderRadius: '50%', marginBottom: '1.5rem', color: 'var(--primary)' }}>
             <Icons.Wifi />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.025em' }}>Portal Cautivo</h1>
+          <h1 style={{ fontSize: '1.85rem', fontWeight: '800', marginBottom: '0.5rem', letterSpacing: '-0.025em', color: 'var(--text-main)' }}>Portal Cautivo</h1>
           <p style={{ color: 'var(--text-muted)' }}>Inicia sesión para acceder a la red</p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '10px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: '500' }}>{error}</div>}
+          {error && <div style={{ background: '#ffebeb', color: '#c53030', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: '600' }}>{error}</div>}
           
           <div className="input-group">
             <label>Usuario</label>
@@ -201,11 +329,11 @@ const LoginForm = ({ onLogin }: { onLogin: (u: User) => void }) => {
               placeholder="••••••••"
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '1rem' }}>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', padding: '1.1rem' }}>
             Acceder a Internet
           </button>
         </form>
-        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+        <div style={{ marginTop: '2.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', opacity: 0.7 }}>
           Acceso seguro a Red Local v1.0
         </div>
       </div>
@@ -229,16 +357,16 @@ const UserWelcome = ({ user, onLogout }: { user: User, onLogout: () => void }) =
 
   return (
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <div className="card fade-in" style={{ width: '100%', maxWidth: '500px', textAlign: 'center', padding: '3.5rem 2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+      <div className="card fade-in" style={{ width: '100%', maxWidth: '500px', textAlign: 'center', padding: '4rem 2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem', transform: 'scale(1.2)' }}>
           <Icons.CheckCircle />
         </div>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.75rem', fontWeight: '800', letterSpacing: '-0.025em' }}>¡Conectado!</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>Bienvenido, <strong>{user.username}</strong>. Tienes acceso limitado.</p>
+        <h1 style={{ fontSize: '2.2rem', marginBottom: '0.75rem', fontWeight: '800', letterSpacing: '-0.025em' }}>¡Conectado!</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '3rem', fontSize: '1.15rem' }}>Bienvenido, <strong>{user.username}</strong>. Tienes acceso limitado.</p>
         
-        <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '16px', marginBottom: '2.5rem', border: '1px solid var(--border)' }}>
-          <div style={{ textTransform: 'uppercase', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>Tiempo de sesión</div>
-          <div style={{ fontSize: '3.5rem', fontWeight: '700', color: 'var(--primary)', fontFamily: 'monospace', lineHeight: 1 }}>{formatTime(timer)}</div>
+        <div style={{ background: '#fcfbf9', padding: '2.5rem', borderRadius: '24px', marginBottom: '3rem', border: '1px solid var(--border)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ textTransform: 'uppercase', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-muted)', letterSpacing: '0.15em', marginBottom: '1rem' }}>Tiempo de sesión</div>
+          <div style={{ fontSize: '4rem', fontWeight: '700', color: 'var(--primary)', fontFamily: 'monospace', lineHeight: 1 }}>{formatTime(timer)}</div>
         </div>
 
         <button onClick={onLogout} className="btn btn-ghost">
@@ -274,7 +402,7 @@ const UserModal = ({ user, onClose, onSave }: UserModalProps) => {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '700' }}>{user ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
+        <h2 style={{ marginBottom: '2rem', fontSize: '1.75rem', fontWeight: '800', color: 'var(--text-main)' }}>{user ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label>Nombre de Usuario</label>
@@ -286,18 +414,18 @@ const UserModal = ({ user, onClose, onSave }: UserModalProps) => {
           </div>
           <div className="input-group">
             <label>Rol de Acceso</label>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.75rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.75rem', border: `1px solid ${role === 'user' ? 'var(--primary)' : 'var(--border)'}`, borderRadius: '8px', flex: 1, background: role === 'user' ? '#eff6ff' : 'white' }}>
-                <input type="radio" checked={role === 'user'} onChange={() => setRole('user')} />
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '1rem', border: `2px solid ${role === 'user' ? 'var(--primary)' : 'transparent'}`, borderRadius: '12px', flex: 1, background: role === 'user' ? 'var(--primary-light)' : '#f0ebe4', transition: 'all 0.2s', fontWeight: '600', color: role === 'user' ? 'var(--primary)' : 'var(--text-muted)' }}>
+                <input type="radio" checked={role === 'user'} onChange={() => setRole('user')} style={{accentColor: 'var(--primary)'}} />
                 Usuario
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.75rem', border: `1px solid ${role === 'admin' ? 'var(--primary)' : 'var(--border)'}`, borderRadius: '8px', flex: 1, background: role === 'admin' ? '#eff6ff' : 'white' }}>
-                <input type="radio" checked={role === 'admin'} onChange={() => setRole('admin')} />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '1rem', border: `2px solid ${role === 'admin' ? 'var(--primary)' : 'transparent'}`, borderRadius: '12px', flex: 1, background: role === 'admin' ? 'var(--primary-light)' : '#f0ebe4', transition: 'all 0.2s', fontWeight: '600', color: role === 'admin' ? 'var(--primary)' : 'var(--text-muted)' }}>
+                <input type="radio" checked={role === 'admin'} onChange={() => setRole('admin')} style={{accentColor: 'var(--primary)'}} />
                 Admin
               </label>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '3rem' }}>
             <button type="button" onClick={onClose} className="btn btn-ghost">Cancelar</button>
             <button type="submit" className="btn btn-primary">{user ? 'Guardar Cambios' : 'Crear Usuario'}</button>
           </div>
@@ -366,9 +494,6 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].username) {
-           // Ensure current admin isn't lost if not in file, though usually we want full replace
-           // Let's do a safe merge: replace all but ensure current user session stays valid if possible.
-           // Ideally, full replace is safer for "Sync".
            if (confirm(`Se cargarán ${parsed.length} usuarios. Esto reemplazará la lista actual. ¿Continuar?`)) {
              setUsers(parsed);
              alert('¡Base de datos sincronizada correctamente!');
@@ -380,7 +505,6 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
         console.error(err);
         alert('Error al leer el archivo. Asegúrate de que es un JSON válido.');
       }
-      // Reset input
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsText(file);
@@ -390,13 +514,13 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
     <div className="container">
       <div className="header fade-in">
         <div className="logo">
-          <div style={{ background: '#eff6ff', padding: '0.5rem', borderRadius: '8px', display: 'flex' }}>
+          <div style={{ background: 'var(--primary-light)', padding: '0.6rem', borderRadius: '12px', display: 'flex', color: 'var(--primary)' }}>
             <Icons.Wifi />
           </div>
           <span>Panel de Administración</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Hola, <strong>{currentUser.username}</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>Hola, <strong>{currentUser.username}</strong></span>
           <button onClick={onLogout} className="btn btn-ghost btn-sm">
             <Icons.LogOut /> Salir
           </button>
@@ -405,22 +529,22 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
 
       <div className="fade-in">
         {/* Sync Tools Section */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-main)' }}>Sincronización Manual</h3>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '1.25rem', color: 'var(--text-main)' }}>Sincronización Manual</h3>
           <div className="tools-grid">
             <div className="tool-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)', fontWeight: '600' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--primary)', fontWeight: '700' }}>
                 <Icons.Download /> Exportar Datos
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descarga la lista actual de usuarios. Envía este archivo a otros dispositivos para sincronizar.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Descarga la lista actual de usuarios. Envía este archivo a otros dispositivos para sincronizar.</p>
               <button onClick={handleExport} className="btn btn-outline btn-sm">Descargar Base de Datos</button>
             </div>
             
             <div className="tool-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)', fontWeight: '600' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)', fontWeight: '700' }}>
                 <Icons.Upload /> Importar Datos
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Carga un archivo de base de datos para actualizar la lista de usuarios en este dispositivo.</p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>Carga un archivo de base de datos para actualizar la lista de usuarios en este dispositivo.</p>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -436,8 +560,8 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem' }}>Gestión de Usuarios</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Administra el acceso a la red local.</p>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '0.4rem', color: 'var(--text-main)' }}>Gestión de Usuarios</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Administra el acceso a la red local.</p>
             </div>
             <button onClick={() => { setEditingUser(undefined); setIsModalOpen(true); }} className="btn btn-primary btn-sm">
               <Icons.Plus /> Nuevo Usuario
@@ -458,11 +582,11 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
                 {users.map(user => (
                   <tr key={user.id}>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ background: '#faf8f5', padding: '0.6rem', borderRadius: '50%', color: 'var(--primary)', border: '1px solid var(--border)' }}>
                           <Icons.User />
                         </div>
-                        <span style={{ fontWeight: '600' }}>{user.username}</span>
+                        <span style={{ fontWeight: '700', fontSize: '1rem' }}>{user.username}</span>
                       </div>
                     </td>
                     <td>
@@ -470,9 +594,9 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
                         {user.role === 'admin' ? 'Administrador' : 'Usuario'}
                       </span>
                     </td>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{user.password}</td>
+                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)', fontSize: '1rem' }}>{user.password}</td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                         <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="btn btn-ghost btn-sm" title="Editar">
                           <Icons.Edit />
                         </button>
@@ -488,7 +612,7 @@ const AdminDashboard = ({ currentUser, onLogout }: { currentUser: User, onLogout
               </tbody>
             </table>
             {users.length === 0 && (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios registrados</div>
+              <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios registrados</div>
             )}
           </div>
         </div>
